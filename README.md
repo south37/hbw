@@ -20,7 +20,7 @@ Or install it yourself as:
 
 ## Usage
 
-By using `HBW.notify`, you can report error to honeybadger.io in production environment and raise error in development environment.
+By using `HBW.notify`, you can report error to honeybadger.io if `defined?(Honeybadger)` is true and raise error if `defined?(Honeybadger)` is false.
 
 ```ruby
 HBW.notify("PaymentConfiguration", error_message, context: { company_id: self.id })
@@ -111,7 +111,7 @@ HBW.notify("PaymentConfiguration", "Empty payment period found in PaymentConfigu
 
 ### `raise_development` option
 
-This option is default true.
+This option is default true. When `defined?(Honeybadger)` is false and `HBW.notify` is called, exception is raised by default. By setting `raise_development: false`, no exception is raised in such situation.
 
 ```ruby
 # `exception` is raised
