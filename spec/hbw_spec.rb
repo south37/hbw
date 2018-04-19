@@ -193,4 +193,54 @@ describe HBW do
       end
     end
   end
+
+  describe ".configure" do
+    before do
+      allow(HBW).to receive(:should_use_honeybadger?).and_return(true)
+    end
+    let(:notice_only_notifier) { Object.new }
+    let(:notice_only_api_key) { 'abcdef' }
+
+    it "sets notice_only_notifier" do
+      expect(HBW.notice_only_notifier).to eq nil
+      expect(HBW).to receive(:build_notifier).with(notice_only_api_key).and_return(notice_only_notifier)
+      HBW.configure do |config|
+        config.notice_only_api_key = notice_only_api_key
+      end
+      expect(HBW.notice_only_notifier).to eq notice_only_notifier
+    end
+  end
+
+  describe ".notify_internal" do
+    subject { HBW.send(:notify_internal, [exception], notice_only: notice_only) }
+
+    before do
+      allow(HBW).to receive(:notice_only_notifier).and_return(notice_only_notifier)
+    end
+
+    let(:notice_only_notifier) do
+      o = Object.new
+      def o.notify(exception_or_opts, opts = {}); end
+      o
+    end
+    let(:exception) { Exception.new }
+
+    context "when notice_only is true" do
+      let(:notice_only) { true }
+
+      it "calls notice_only_notifier.notify" do
+        expect(notice_only_notifier).to receive(:notify).with(exception)
+        subject
+      end
+    end
+
+    context "when notice_only is false" do
+      let(:notice_only) { false }
+
+      it "calls honeybadger_notify" do
+        expect(HBW).to receive(:honeybadger_notify).with(exception)
+        subject
+      end
+    end
+  end
 end

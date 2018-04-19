@@ -1,9 +1,14 @@
 require "hbw/version"
+require "hbw/config"
 
 module HBW
   class ArgumentError < ::ArgumentError; end
 
+  @notice_only_notifier = nil
+
   class << self
+    attr_reader :notice_only_notifier
+
     # @overload
     #
     # @param [Exception] exception
@@ -97,11 +102,13 @@ module HBW
 
       # QA, Production
       if should_use_honeybadger?
-        if exception_or_opts.respond_to?(:to_hash)  # Already merged to opts
-          honeybadger_notify(opts)
-        else
-          honeybadger_notify(exception_or_opts, opts)
-        end
+        args =
+          if exception_or_opts.respond_to?(:to_hash)  # Already merged to opts
+            [opts]
+          else
+            [exception_or_opts, opts]
+          end
+        notify_internal(args, notice_only: notice_only)
         return nil
       end
 
@@ -115,6 +122,14 @@ module HBW
       end
 
       nil
+    end
+
+    def configure
+      config = Config.new
+      yield(config)
+      if config.notice_only_api_key && should_use_honeybadger?
+        @notice_only_notifier = build_notifier(config.notice_only_api_key)
+      end
     end
 
   private
@@ -137,10 +152,27 @@ module HBW
       defined?(Honeybadger)
     end
 
+    # @param [Array] args
+    def notify_internal(args, notice_only:)
+      if notice_only && notice_only_notifier
+        notice_only_notifier.notify(*args)
+      else
+        honeybadger_notify(*args)
+      end
+    end
+
     # @param [Exception, Hash] exception_or_opts
     # @param [Hash] opts
     def honeybadger_notify(exception_or_opts, opts = {})
       ::Honeybadger.notify(exception_or_opts, opts)
+    end
+
+    def build_notifier(api_key)
+      r = ::Honeybadger::Agent.new(::Honeybadger.config.dup)
+      r.configure do |config|
+        config.api_key = api_key
+      end
+      r
     end
 
     # @param [Exception, Hash] exception_or_opts
