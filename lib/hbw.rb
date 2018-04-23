@@ -168,7 +168,14 @@ module HBW
     end
 
     def build_notifier(api_key)
-      r = ::Honeybadger::Agent.new(::Honeybadger.config.dup)
+      r = ::Honeybadger::Agent.new
+      r.init!({
+        :root           => ::Rails.root.to_s,
+        :env            => ::Rails.env,
+        :'config.path'  => ::Rails.root.join('config', 'honeybadger.yml'),
+        :logger         => ::Honeybadger::Logging::FormattedLogger.new(::Rails.logger),
+        :framework      => :rails
+      })
       r.configure do |config|
         config.api_key = api_key
       end
