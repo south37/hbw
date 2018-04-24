@@ -80,7 +80,7 @@ HBW.notify(
 # end
 ```
 
-### `notifce_only` option
+### `notice_only` option
 
 This option is default false.
 
