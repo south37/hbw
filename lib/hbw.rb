@@ -4,6 +4,8 @@ require "hbw/config"
 module HBW
   class ArgumentError < ::ArgumentError; end
 
+  TAG = "notice_only".freeze
+
   @notice_only_notifier = nil
 
   class << self
@@ -98,6 +100,7 @@ module HBW
 
       if notice_only
         opts[:error_message] = "[Notice Only] #{error_class(exception_or_opts, opts)}: #{error_message(exception_or_opts, opts)}"
+        opts[:tags] = opts.key?(:tags) ? "#{opts[:tags]}, #{TAG}" : TAG
       end
 
       # QA, Production
